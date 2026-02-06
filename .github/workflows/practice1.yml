@@ -1,0 +1,44 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
+
+      - name: Formatting test
+        run: black .
+
+      - name: Lint test
+        run: flake8 .
+
+      - name: Static analysis
+        run:  bandit -r .
+    
+      - name: Unit test
+        run: pytest test_app.py
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and Push Image
+        uses: docker build -t ${{ secrets.DOCKER_USERNAME }}/devops-practice-1:latest .
+
+      - name: Push to dockerhub
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/devops-practice-1:latest
